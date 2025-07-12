@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGIS - Igrapiuna</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h1 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .basemap-controls {
+            margin-bottom: 30px;
+        }
+
+        .basemap-controls h3 {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .basemap-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .basemap-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .basemap-option input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .layer-controls {
+            margin-bottom: 30px;
+        }
+
+        .layer-controls h3 {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .layer-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .layer-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .layer-option input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-width: 300px;
+            font-size: 0.9rem;
+        }
+
+        .info-panel h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .coordinates {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 3px;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            margin-bottom: 15px;
+        }
+
+        .status h4 {
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        #layer-status {
+            font-size: 0.8rem;
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 3px;
+            border-left: 3px solid #007bff;
+        }
+
+        .layer-loaded {
+            color: #28a745;
+        }
+
+        .layer-error {
+            color: #dc3545;
+        }
+
+        /* Estilos personalizados para pop-ups */
+        .custom-popup .leaflet-popup-content-wrapper {
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .custom-popup .leaflet-popup-content {
+            margin: 0;
+            padding: 0;
+        }
+
+        .custom-popup .leaflet-popup-tip {
+            background: white;
+        }
+
+        /* Scrollbar personalizada para pop-ups */
+        .custom-popup .leaflet-popup-content-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-popup .leaflet-popup-content-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .custom-popup .leaflet-popup-content-wrapper::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .custom-popup .leaflet-popup-content-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .legend {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 15px;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 200px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h1>🌍 WebGIS Igrapiuna</h1>
+
+            <div class="basemap-controls">
+                <h3>🗺️ Mapas de Fundo</h3>
+                <div class="basemap-option">
+                    <input type="radio" name="basemap" id="osm" value="osm" checked>
+                    <label for="osm">OpenStreetMap</label>
+                </div>
+                <div class="basemap-option">
+                    <input type="radio" name="basemap" id="satellite" value="satellite">
+                    <label for="satellite">Satélite</label>
+                </div>
+                <div class="basemap-option">
+                    <input type="radio" name="basemap" id="topo" value="topo">
+                    <label for="topo">CartoDB Voyager</label>
+                </div>
+            </div>
+
+            <div class="layer-controls">
+                <h3>📊 Camadas</h3>
+                <div class="layer-option">
+                    <input type="checkbox" id="igrapiuna" checked>
+                    <label for="igrapiuna">Limite Municipal</label>
+                </div>
+                <div class="layer-option">
+                    <input type="checkbox" id="area-imovel">
+                    <label for="area-imovel">Área do Imóvel</label>
+                </div>
+                <div class="layer-option">
+                    <input type="checkbox" id="vegetacao">
+                    <label for="vegetacao">Vegetação Nativa</label>
+                </div>
+                <div class="layer-option">
+                    <input type="checkbox" id="reserva-legal">
+                    <label for="reserva-legal">Reserva Legal</label>
+                </div>
+                <div class="layer-option">
+                    <input type="checkbox" id="hidrografia">
+                    <label for="hidrografia">Hidrografia</label>
+                </div>
+                <div class="layer-option">
+                    <input type="checkbox" id="area-consolidada">
+                    <label for="area-consolidada">Área Consolidada</label>
+                </div>
+                <div class="layer-option">
+                    <input type="checkbox" id="app">
+                    <label for="app">APP</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+
+            <div class="info-panel">
+                <h4>ℹ️ Informações</h4>
+                <div class="coordinates">
+                    <strong>Coordenadas:</strong><br>
+                    <span id="coordinates">Clique no mapa</span>
+                </div>
+                <div class="status">
+                    <h4>📊 Status das Camadas</h4>
+                    <div id="layer-status">
+                        <span>🔄 Carregando camadas...</span>
+                    </div>
+                </div>
+                <div class="legend">
+                    <h4>🎨 Legenda (Ordem de Sobreposição)</h4>
+                    <div class="legend-item" style="border-left: 3px solid #cccccc; padding-left: 8px;">
+                        <div class="legend-color" style="background-color: #cccccc; border: 2px solid #cccccc;"></div>
+                        <span><strong>Limite Municipal</strong> (Topo)</span>
+                    </div>
+                    <div class="legend-item" style="border-left: 3px solid #54a0ff; padding-left: 8px;">
+                        <div class="legend-color" style="background-color: #54a0ff;"></div>
+                        <span><strong>APP</strong></span>
+                    </div>
+                    <div class="legend-item" style="border-left: 3px solid #96ceb4; padding-left: 8px;">
+                        <div class="legend-color" style="background-color: #96ceb4;"></div>
+                        <span><strong>Reserva Legal</strong></span>
+                    </div>
+                    <div class="legend-item" style="border-left: 3px solid #2d5a2d; padding-left: 8px;">
+                        <div class="legend-color" style="background-color: #2d5a2d;"></div>
+                        <span><strong>Vegetação Nativa</strong></span>
+                    </div>
+                    <div class="legend-item" style="border-left: 3px solid #ff9ff3; padding-left: 8px;">
+                        <div class="legend-color" style="background-color: #ff9ff3;"></div>
+                        <span><strong>Área Consolidada</strong></span>
+                    </div>
+                    <div class="legend-item" style="border-left: 3px solid #4ecdc4; padding-left: 8px;">
+                        <div class="legend-color" style="background-color: #4ecdc4;"></div>
+                        <span><strong>Área do Imóvel</strong> (Base)</span>
+                    </div>
+                    <div class="legend-item" style="border-left: 3px solid #feca57; padding-left: 8px;">
+                        <div class="legend-color" style="background-color: #feca57;"></div>
+                        <span>Hidrografia</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Inicialização do mapa
+        const map = L.map('map').setView([-13.8167, -39.1333], 12); // Zoom mais próximo de Igrapiuna
+
+        // Definição dos mapas de fundo
+        const basemaps = {
+            osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }),
+            satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+            }),
+            topo: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '© CARTO'
+            })
+        };
+
+        // Adicionar mapa base inicial
+        basemaps.osm.addTo(map);
+
+        // Controle de mapas de fundo
+        document.querySelectorAll('input[name="basemap"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                // Remover todos os mapas de fundo
+                Object.values(basemaps).forEach(basemap => {
+                    map.removeLayer(basemap);
+                });
+
+                // Adicionar o mapa selecionado
+                const selectedBasemap = basemaps[this.value];
+                selectedBasemap.addTo(map);
+            });
+        });
+
+        // Objeto para armazenar as camadas
+        const layers = {};
+
+        // Função para carregar dados GeoJSON
+        async function loadGeoJSON(url, layerName, style) {
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                layers[layerName] = L.geoJSON(data, {
+                    style: style,
+                    onEachFeature: function (feature, layer) {
+                        if (feature.properties) {
+                            // Criar tabela de atributos completa
+                            const properties = feature.properties;
+                            let popupContent = `
+                                <div style="max-width: 400px; max-height: 300px; overflow-y: auto;">
+                                    <h3 style="color: #333; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 5px;">
+                                        📊 ${layerName.toUpperCase()}
+                                    </h3>
+                                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                        <thead>
+                                            <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                                                <th style="padding: 8px; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">Atributo</th>
+                                                <th style="padding: 8px; text-align: left; border: 1px solid #dee2e6; font-weight: bold;">Valor</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                            `;
+
+                            // Adicionar cada propriedade na tabela
+                            Object.entries(properties).forEach(([key, value], index) => {
+                                const rowColor = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
+                                const displayValue = value !== null && value !== undefined ? value : '-';
+                                popupContent += `
+                                    <tr style="background-color: ${rowColor};">
+                                        <td style="padding: 6px 8px; border: 1px solid #dee2e6; font-weight: 500; color: #495057;">${key}</td>
+                                        <td style="padding: 6px 8px; border: 1px solid #dee2e6; word-break: break-word; font-family: monospace;">${displayValue}</td>
+                                    </tr>
+                                `;
+                            });
+
+                            popupContent += `
+                                        </tbody>
+                                    </table>
+                                    <div style="margin-top: 10px; font-size: 11px; color: #6c757d; text-align: center;">
+                                        💡 Clique fora para fechar
+                                    </div>
+                                </div>
+                            `;
+
+                            // Adicionar informações da geometria se disponível
+                            if (feature.geometry) {
+                                const geomType = feature.geometry.type;
+                                const coords = feature.geometry.coordinates;
+                                let geomInfo = '';
+
+                                if (geomType === 'Polygon' && coords && coords[0]) {
+                                    const area = calculateArea(coords[0]);
+                                    geomInfo = `
+                                        <div style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border-radius: 5px; border-left: 4px solid #2196f3;">
+                                            <h4 style="margin: 0 0 8px 0; color: #1976d2; font-size: 14px;">📐 Informações da Geometria</h4>
+                                            <p style="margin: 0; font-size: 12px; color: #424242;">
+                                                <strong>Tipo:</strong> ${geomType}<br>
+                                                <strong>Área Aproximada:</strong> ${area.toFixed(2)} km²<br>
+                                                <strong>Coordenadas:</strong> ${coords[0].length} pontos
+                                            </p>
+                                        </div>
+                                    `;
+                                } else if (geomType === 'LineString' && coords) {
+                                    const length = calculateLength(coords);
+                                    geomInfo = `
+                                        <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px; border-left: 4px solid #ff9800;">
+                                            <h4 style="margin: 0 0 8px 0; color: #f57c00; font-size: 14px;">📏 Informações da Geometria</h4>
+                                            <p style="margin: 0; font-size: 12px; color: #424242;">
+                                                <strong>Tipo:</strong> ${geomType}<br>
+                                                <strong>Comprimento Aproximado:</strong> ${length.toFixed(2)} km<br>
+                                                <strong>Coordenadas:</strong> ${coords.length} pontos
+                                            </p>
+                                        </div>
+                                    `;
+                                }
+
+                                popupContent += geomInfo;
+                            }
+
+                            layer.bindPopup(popupContent, {
+                                maxWidth: 500,
+                                maxHeight: 500,
+                                className: 'custom-popup'
+                            });
+                        }
+                    }
+                });
+
+                return layers[layerName];
+            } catch (error) {
+                console.error(`Erro ao carregar ${layerName}:`, error);
+                return null;
+            }
+        }
+
+        // Estilos para as camadas
+        const layerStyles = {
+            'igrapiuna': { color: '#cccccc', weight: 2, fillOpacity: 0, fillColor: 'transparent' },
+            'area-imovel': { color: '#4ecdc4', weight: 2, fillOpacity: 0.3 },
+            'vegetacao': { color: '#2d5a2d', weight: 2, fillOpacity: 0.6 },
+            'reserva-legal': { color: '#96ceb4', weight: 2, fillOpacity: 0.4 },
+            'hidrografia': { color: '#feca57', weight: 2, fillOpacity: 0.6 },
+            'area-consolidada': { color: '#ff9ff3', weight: 2, fillOpacity: 0.3 },
+            'app': { color: '#54a0ff', weight: 2, fillOpacity: 0.4 }
+        };
+
+        // Carregar todas as camadas
+        const layerUrls = {
+            'igrapiuna': 'data/igrapiuna/IGRAPIUNA.geojson',
+            'area-imovel': 'data/igrapiuna/AREA_IMOVEL.geojson',
+            'vegetacao': 'data/igrapiuna/VEGETACAO_NATIVA.geojson',
+            'reserva-legal': 'data/igrapiuna/RESERVA_LEGAL.geojson',
+            'hidrografia': 'data/igrapiuna/HIDROGRAFIA.geojson',
+            'area-consolidada': 'data/igrapiuna/AREA_CONSOLIDADA.geojson',
+            'app': 'data/igrapiuna/APP.geojson'
+        };
+
+        // Contador para acompanhar o carregamento
+        let loadedLayers = 0;
+        const totalLayers = Object.keys(layerUrls).length;
+        const layerStatusElement = document.getElementById('layer-status');
+
+        // Função para atualizar o status
+        function updateLayerStatus(layerName, success = true) {
+            loadedLayers++;
+            const status = success ? '✅' : '❌';
+            const className = success ? 'layer-loaded' : 'layer-error';
+
+            if (loadedLayers === totalLayers) {
+                layerStatusElement.innerHTML = `<span class="${className}">${status} Todas as camadas carregadas (${loadedLayers}/${totalLayers})</span>`;
+
+                // Ajustar zoom para todas as camadas ativas quando terminar de carregar
+                setTimeout(() => {
+                    const activeLayers = [];
+                    Object.keys(layers).forEach(name => {
+                        const checkbox = document.getElementById(name);
+                        if (checkbox && checkbox.checked && layers[name]) {
+                            activeLayers.push(layers[name]);
+                        }
+                    });
+
+                    if (activeLayers.length > 0) {
+                        const group = L.featureGroup(activeLayers);
+                        const bounds = group.getBounds();
+                        if (bounds.isValid()) {
+                            map.fitBounds(bounds, {
+                                padding: [30, 30],
+                                maxZoom: 14,
+                                animate: true
+                            });
+                            console.log('🔍 Zoom ajustado para todas as camadas ativas');
+                        }
+                    }
+                }, 500); // Aguardar 500ms para garantir que todas as camadas foram processadas
+            } else {
+                layerStatusElement.innerHTML = `<span>🔄 Carregando... (${loadedLayers}/${totalLayers})</span>`;
+            }
+        }
+
+        // Ordem de sobreposição das camadas (da base para o topo)
+        const layerOrder = [
+            'area-imovel',      // Base (mais baixo)
+            'area-consolidada', // 2º nível
+            'vegetacao',        // 3º nível
+            'reserva-legal',    // 4º nível
+            'app',              // 5º nível
+            'igrapiuna'         // Topo (mais alto)
+        ];
+
+        // Função para adicionar camada na ordem correta
+        function addLayerInOrder(layerName, layer) {
+            const currentIndex = layerOrder.indexOf(layerName);
+
+            // Remover todas as camadas que estão acima desta
+            layerOrder.forEach((name, index) => {
+                if (index > currentIndex && layers[name]) {
+                    map.removeLayer(layers[name]);
+                }
+            });
+
+            // Adicionar a camada atual
+            layer.addTo(map);
+
+            // Readicionar as camadas que estavam acima
+            layerOrder.forEach((name, index) => {
+                if (index > currentIndex && layers[name]) {
+                    const checkbox = document.getElementById(name);
+                    if (checkbox && checkbox.checked) {
+                        layers[name].addTo(map);
+                    }
+                }
+            });
+        }
+
+        // Carregar camadas e configurar controles
+        Object.entries(layerUrls).forEach(([layerName, url]) => {
+            loadGeoJSON(url, layerName, layerStyles[layerName]).then(layer => {
+                if (layer) {
+                    console.log(`✅ Camada ${layerName} carregada com sucesso`);
+                    updateLayerStatus(layerName, true);
+
+                    // Adicionar camada inicial se for igrapiuna
+                    if (layerName === 'igrapiuna') {
+                        layer.addTo(map);
+                        console.log('🗺️ Limite municipal adicionado ao mapa');
+
+                        // Ajustar o zoom para os limites da camada
+                        const bounds = layer.getBounds();
+                        if (bounds.isValid()) {
+                            map.fitBounds(bounds, {
+                                padding: [20, 20], // Margem de 20px
+                                maxZoom: 15, // Zoom máximo para não ficar muito próximo
+                                animate: true // Animação suave
+                            });
+                            console.log('🔍 Zoom ajustado para os limites de Igrapiuna');
+                        }
+                    }
+
+                    // Configurar controle de checkbox
+                    const checkbox = document.getElementById(layerName);
+                    if (checkbox) {
+                        checkbox.addEventListener('change', function () {
+                            if (this.checked) {
+                                addLayerInOrder(layerName, layer);
+                                console.log(`✅ Camada ${layerName} ativada`);
+
+                                // Ajustar zoom para todas as camadas ativas
+                                setTimeout(() => {
+                                    const activeLayers = [];
+                                    Object.keys(layers).forEach(name => {
+                                        const checkbox = document.getElementById(name);
+                                        if (checkbox && checkbox.checked && layers[name]) {
+                                            activeLayers.push(layers[name]);
+                                        }
+                                    });
+
+                                    if (activeLayers.length > 0) {
+                                        const group = L.featureGroup(activeLayers);
+                                        const bounds = group.getBounds();
+                                        if (bounds.isValid()) {
+                                            map.fitBounds(bounds, {
+                                                padding: [20, 20],
+                                                maxZoom: 15,
+                                                animate: true
+                                            });
+                                        }
+                                    }
+                                }, 100);
+                            } else {
+                                map.removeLayer(layer);
+                                console.log(`❌ Camada ${layerName} desativada`);
+
+                                // Ajustar zoom para as camadas restantes
+                                setTimeout(() => {
+                                    const activeLayers = [];
+                                    Object.keys(layers).forEach(name => {
+                                        const checkbox = document.getElementById(name);
+                                        if (checkbox && checkbox.checked && layers[name]) {
+                                            activeLayers.push(layers[name]);
+                                        }
+                                    });
+
+                                    if (activeLayers.length > 0) {
+                                        const group = L.featureGroup(activeLayers);
+                                        const bounds = group.getBounds();
+                                        if (bounds.isValid()) {
+                                            map.fitBounds(bounds, {
+                                                padding: [20, 20],
+                                                maxZoom: 15,
+                                                animate: true
+                                            });
+                                        }
+                                    }
+                                }, 100);
+                            }
+                        });
+                    }
+                } else {
+                    console.error(`❌ Erro ao carregar camada ${layerName}`);
+                    updateLayerStatus(layerName, false);
+                }
+            }).catch(error => {
+                console.error(`❌ Erro ao carregar ${layerName}:`, error);
+                updateLayerStatus(layerName, false);
+            });
+        });
+
+        // Atualizar coordenadas do mouse
+        map.on('mousemove', function (e) {
+            const coords = e.latlng;
+            document.getElementById('coordinates').innerHTML =
+                `Lat: ${coords.lat.toFixed(6)}<br>Lng: ${coords.lng.toFixed(6)}`;
+        });
+
+        // Zoom para os limites quando clicar no mapa
+        map.on('click', function (e) {
+            const coords = e.latlng;
+            document.getElementById('coordinates').innerHTML =
+                `Lat: ${coords.lat.toFixed(6)}<br>Lng: ${coords.lng.toFixed(6)}`;
+        });
+
+        // Funções para calcular área e comprimento
+        function calculateArea(coordinates) {
+            // Cálculo aproximado da área usando fórmula de Gauss
+            let area = 0;
+            for (let i = 0; i < coordinates.length - 1; i++) {
+                area += coordinates[i][0] * coordinates[i + 1][1];
+                area -= coordinates[i + 1][0] * coordinates[i][1];
+            }
+            area = Math.abs(area) / 2;
+
+            // Converter para km² (aproximação)
+            return area * 111 * 111; // 1 grau ≈ 111 km
+        }
+
+        function calculateLength(coordinates) {
+            let length = 0;
+            for (let i = 0; i < coordinates.length - 1; i++) {
+                const dx = coordinates[i + 1][0] - coordinates[i][0];
+                const dy = coordinates[i + 1][1] - coordinates[i][1];
+                length += Math.sqrt(dx * dx + dy * dy);
+            }
+
+            // Converter para km (aproximação)
+            return length * 111; // 1 grau ≈ 111 km
+        }
+
+        // Adicionar controle de escala
+        L.control.scale().addTo(map);
+
+        console.log('WebGIS carregado com sucesso!');
+    </script>
+</body>
+
+</html>
