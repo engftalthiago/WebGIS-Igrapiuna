@@ -518,10 +518,10 @@
 
         // Initialize map
         function initMap() {
-            // Create map centered on Igrapiuna
+            // Create map with default view - will be adjusted after loading layers
             map = L.map('map', {
-                center: [-14.0853, -39.8578], // Igrapiuna coordinates
-                zoom: 12,
+                center: [-13.85, -39.85], // Igrapiuna approximate center
+                zoom: 11,
                 zoomControl: true,
                 attributionControl: true
             });
@@ -630,9 +630,24 @@
                 }
             }
 
-            // Fit map to bounds
-            if (!bounds.isEmpty()) {
-                map.fitBounds(bounds, { padding: [20, 20] });
+            // Always center on Igrapiuna municipal boundary
+            const igrapiunaLayer = layers['igrapiuna'];
+            if (igrapiunaLayer) {
+                const igrapiunaBounds = igrapiunaLayer.getBounds();
+                map.fitBounds(igrapiunaBounds, { 
+                    padding: [30, 30],
+                    maxZoom: 14,
+                    minZoom: 11
+                });
+            } else {
+                // Fallback to bounds if municipal layer not available
+                if (!bounds.isEmpty()) {
+                    map.fitBounds(bounds, { 
+                        padding: [20, 20],
+                        maxZoom: 14,
+                        minZoom: 11
+                    });
+                }
             }
         }
 
@@ -714,11 +729,15 @@
             if (layer) {
                 if (checked) {
                     layer.addTo(map);
-                    // Adjust zoom to include new layer
-                    const layerBounds = layer.getBounds();
-                    if (!bounds.isEmpty()) {
-                        bounds.extend(layerBounds);
-                        map.fitBounds(bounds, { padding: [20, 20] });
+                    // Always center on Igrapiuna municipal boundary
+                    const igrapiunaLayer = layers['igrapiuna'];
+                    if (igrapiunaLayer) {
+                        const igrapiunaBounds = igrapiunaLayer.getBounds();
+                        map.fitBounds(igrapiunaBounds, { 
+                            padding: [30, 30],
+                            maxZoom: 14,
+                            minZoom: 11
+                        });
                     }
                 } else {
                     map.removeLayer(layer);
@@ -739,8 +758,21 @@
                     }
                 }
             }
-            if (!bounds.isEmpty()) {
-                map.fitBounds(bounds, { padding: [20, 20] });
+            // Always center on Igrapiuna municipal boundary
+            const igrapiunaLayer = layers['igrapiuna'];
+            if (igrapiunaLayer) {
+                const igrapiunaBounds = igrapiunaLayer.getBounds();
+                map.fitBounds(igrapiunaBounds, { 
+                    padding: [30, 30],
+                    maxZoom: 14,
+                    minZoom: 11
+                });
+            } else if (!bounds.isEmpty()) {
+                map.fitBounds(bounds, { 
+                    padding: [20, 20],
+                    maxZoom: 14,
+                    minZoom: 11
+                });
             }
         }
 
