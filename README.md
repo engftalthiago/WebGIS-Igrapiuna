@@ -1,151 +1,173 @@
-# 🌍 WebGIS Igrapiuna
+# WebGIS Igrapiuna
 
-Um sistema de informação geográfica web desenvolvido com Leaflet para visualização de dados geoespaciais do município de Igrapiuna.
+Sistema de Informação Geográfica Web para o município de Igrapiuna, Bahia.
 
-## 🌐 **Acesso Online**
+## 🌍 Sobre o Projeto
 
-**🌍 WebGIS Público:** [https://engftalthiago.github.io/WebGIS-Igrapiuna/](https://engftalthiago.github.io/WebGIS-Igrapiuna/)
+Este WebGIS foi desenvolvido para visualizar e analisar dados geográficos do município de Igrapiuna, incluindo limites municipais, áreas de propriedades, vegetação nativa, reserva legal, áreas consolidadas, APPs e hidrografia.
 
-## 🚀 Funcionalidades
+## 🚀 Acesso Público
 
-### Mapas de Fundo
-- **OpenStreetMap**: Mapa base padrão com informações de ruas e localidades
-- **Satélite**: Imagens de satélite de alta resolução
-- **CartoDB Voyager**: Mapa detalhado com informações de transporte, POIs e relevo
+**URL do WebGIS:** https://engftalthiago.github.io/WebGIS-Igrapiuna/
 
-### Camadas de Dados
-- **Limite Municipal**: Contorno do município de Igrapiuna (transparente com contorno cinza)
-- **Área do Imóvel**: Delimitação das propriedades rurais
-- **Vegetação Nativa**: Cobertura vegetal nativa (verde escuro)
-- **Reserva Legal**: Áreas de reserva legal das propriedades
-- **Hidrografia**: Rios, córregos e corpos d'água
-- **Área Consolidada**: Áreas já consolidadas
-- **APP**: Áreas de Preservação Permanente
+## ✨ Funcionalidades
 
-## 🛠️ Como Usar
+### 🗺️ Mapas Base
+- **OpenStreetMap**: Mapa topográfico padrão
+- **Satélite (Esri)**: Imagens de satélite de alta resolução
+- **CartoDB Voyager**: Mapa estilizado moderno
 
-1. **Acesse o WebGIS online** no link acima
-2. **Selecione o mapa de fundo** desejado no painel lateral esquerdo
-3. **Ative/desative as camadas** marcando/desmarcando as caixas de seleção
-4. **Clique nos elementos** do mapa para ver informações detalhadas
-5. **Use o mouse** para navegar (zoom, pan) no mapa
+### 📊 Camadas Disponíveis
+1. **Limite Municipal** - Fronteiras do município de Igrapiuna
+2. **Área do Imóvel** - Delimitação de propriedades rurais
+3. **Vegetação Nativa** - Cobertura vegetal nativa
+4. **Reserva Legal** - Áreas de proteção legal
+5. **Área Consolidada** - Áreas de uso consolidado
+6. **APP** - Áreas de Preservação Permanente
+7. **Hidrografia** - Rios, córregos e corpos d'água
 
-## 📁 Estrutura de Arquivos
+### 🎛️ Controles Interativos
+- **Sidebar Colapsável**: Controles de camadas e mapas base
+- **Pop-ups Informativos**: Detalhes completos dos atributos
+- **Coordenadas em Tempo Real**: Posição do cursor
+- **Legenda Visual**: Cores e símbolos das camadas
+- **Zoom Automático**: Ajuste automático ao carregar camadas
+
+## 🛠️ Tecnologias Utilizadas
+
+- **Leaflet.js**: Biblioteca de mapas interativos
+- **HTML5/CSS3**: Interface responsiva
+- **JavaScript ES6+**: Funcionalidades dinâmicas
+- **GeoJSON**: Formato de dados geográficos
+- **GitHub Pages**: Hospedagem gratuita
+
+## 📁 Estrutura do Projeto
 
 ```
 WebGIS-Igrapiuna/
-├── index.html              # Interface principal do WebGIS
-├── README.md               # Este arquivo
-├── .github/
-│   └── workflows/
-│       └── deploy.yml      # Configuração do GitHub Actions
-├── .vscode/                # Configurações do VS Code
-│   ├── settings.json
-│   ├── launch.json
-│   └── extensions.json
+├── index.html              # Arquivo principal do WebGIS
 ├── data/
 │   └── igrapiuna/
-│       ├── IGRAPIUNA.geojson
-│       ├── AREA_IMOVEL.geojson
-│       ├── VEGETACAO_NATIVA.geojson
-│       ├── RESERVA_LEGAL.geojson
-│       ├── HIDROGRAFIA.geojson
-│       ├── AREA_CONSOLIDADA.geojson
-│       └── APP.geojson
-└── modulo1.qgz
+│       ├── IGRAPIUNA.geojson          # Limite municipal
+│       ├── AREA_IMOVEL.geojson        # Área do imóvel
+│       ├── VEGETACAO_NATIVA.geojson   # Vegetação nativa
+│       ├── RESERVA_LEGAL.geojson      # Reserva legal
+│       ├── AREA_CONSOLIDADA.geojson   # Área consolidada
+│       ├── APP.geojson                # Áreas de preservação
+│       └── HIDROGRAFIA.geojson        # Hidrografia
+├── .github/
+│   └── workflows/
+│       └── deploy.yml                 # GitHub Actions
+├── README.md                          # Este arquivo
+├── LICENSE                            # Licença MIT
+└── .gitignore                        # Arquivos ignorados
 ```
 
-## 🎨 Características da Interface
+## 🎨 Características Visuais
 
-- **Design responsivo**: Funciona em desktop e dispositivos móveis
-- **Interface intuitiva**: Controles organizados e fáceis de usar
-- **Legenda visual**: Cores distintas para cada tipo de camada
-- **Informações em tempo real**: Coordenadas atualizadas conforme o mouse
-- **Pop-ups informativos**: Detalhes dos elementos ao clicar
-- **Tabela de atributos completa**: Informações detalhadas em formato tabular
-- **Zoom automático**: Ajuste automático para os dados de Igrapiuna
+### Paleta de Cores
+- **Limite Municipal**: Transparente com borda cinza
+- **Área do Imóvel**: Marrom (#8B4513)
+- **Vegetação Nativa**: Verde escuro (#228B22)
+- **Reserva Legal**: Verde claro (#32CD32)
+- **Área Consolidada**: Dourado (#FFD700)
+- **APP**: Azul (#4169E1)
+- **Hidrografia**: Azul claro (#00BFFF)
 
-## 🔧 Tecnologias Utilizadas
+### Interface
+- Design responsivo para desktop e mobile
+- Sidebar com controles intuitivos
+- Pop-ups com tabelas de atributos
+- Legenda visual integrada
+- Painel de informações em tempo real
 
-- **Leaflet 1.9.4**: Biblioteca JavaScript para mapas interativos
-- **HTML5/CSS3**: Estrutura e estilização
-- **JavaScript ES6+**: Lógica de funcionamento
-- **GeoJSON**: Formato de dados geoespaciais
-- **GitHub Pages**: Hospedagem gratuita
+## 🔧 Como Executar Localmente
 
-## 📊 Fontes dos Mapas de Fundo
-
-- **OpenStreetMap**: © OpenStreetMap contributors
-- **Satélite**: © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP
-- **CartoDB Voyager**: © CARTO
-
-## 🌐 Requisitos
-
-- Navegador web moderno (Chrome, Firefox, Safari, Edge)
-- Conexão com internet (para carregar os mapas de fundo)
-
-## 🚀 Como Executar Localmente
-
-### Opção 1: Abrir Diretamente
-1. **Clone o repositório:**
-   ```bash
-   git clone https://github.com/engftalthiago/WebGIS-Igrapiuna.git
-   cd WebGIS-Igrapiuna
-   ```
-2. **Abra o arquivo `index.html`** no navegador
-
-### Opção 2: Servidor Local
+### Opção 1: Servidor Python
 ```bash
 # Python 3
 python -m http.server 8000
 
 # Python 2
 python -m SimpleHTTPServer 8000
-
-# Node.js
-npx http-server
-
-# PHP
-php -S localhost:8000
 ```
 
-Depois acesse: `http://localhost:8000`
+### Opção 2: Servidor Node.js
+```bash
+# Instalar serve globalmente
+npm install -g serve
 
-## 📝 Notas
+# Executar servidor
+serve -p 8000
+```
 
-- Os mapas de fundo são carregados de serviços externos
-- Os dados GeoJSON são carregados localmente
-- O sistema é responsivo e funciona em diferentes tamanhos de tela
-- Todas as camadas são interativas com pop-ups informativos
-- A ordem de sobreposição das camadas é controlada automaticamente
+### Opção 3: Live Server (VS Code)
+1. Instale a extensão "Live Server"
+2. Clique com botão direito no `index.html`
+3. Selecione "Open with Live Server"
 
-## 🔍 Funcionalidades Avançadas
+## 📱 Responsividade
 
-- **Zoom automático**: O mapa se ajusta automaticamente aos dados
-- **Controle de escala**: Barra de escala no canto inferior esquerdo
-- **Navegação intuitiva**: Zoom com scroll, pan com arrastar
-- **Performance otimizada**: Carregamento assíncrono das camadas
-- **Status de carregamento**: Indicador visual do progresso
-- **Cálculo de área/comprimento**: Informações geométricas nos pop-ups
+O WebGIS é totalmente responsivo e funciona em:
+- ✅ Desktop (Windows, macOS, Linux)
+- ✅ Tablet (iOS, Android)
+- ✅ Smartphone (iOS, Android)
 
-## 🤝 Contribuição
+## 🔄 Atualizações Automáticas
+
+O projeto utiliza GitHub Actions para deploy automático:
+- Push para `main` branch
+- Build automático
+- Deploy para GitHub Pages
+- URL atualizada automaticamente
+
+## 📊 Dados Geográficos
+
+### Fonte dos Dados
+- Dados oficiais do município de Igrapiuna
+- Formato GeoJSON otimizado
+- Coordenadas em WGS84 (EPSG:4326)
+
+### Estrutura dos Dados
+Cada camada contém:
+- Geometria (polígonos, linhas, pontos)
+- Atributos descritivos
+- Metadados de origem
+
+## 🤝 Contribuições
 
 Para contribuir com o projeto:
 
-1. **Fork o repositório**
-2. **Crie uma branch** para sua feature (`git checkout -b feature/AmazingFeature`)
-3. **Commit suas mudanças** (`git commit -m 'Add some AmazingFeature'`)
-4. **Push para a branch** (`git push origin feature/AmazingFeature`)
-5. **Abra um Pull Request**
+1. Faça um fork do repositório
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
+5. Abra um Pull Request
 
 ## 📄 Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
 ## 👨‍💻 Autor
 
-**Thiago Martins** - [GitHub](https://github.com/engftalthiago)
+**Thiago Martins**
+- GitHub: [@engftalthiago](https://github.com/engftalthiago)
+- Email: [seu-email@exemplo.com]
+
+## 🙏 Agradecimentos
+
+- Prefeitura Municipal de Igrapiuna
+- Comunidade Leaflet.js
+- GitHub Pages pela hospedagem gratuita
+
+## 📞 Suporte
+
+Para dúvidas ou sugestões:
+- Abra uma [Issue](https://github.com/engftalthiago/WebGIS-Igrapiuna/issues)
+- Entre em contato via email
+- Consulte a documentação do Leaflet.js
 
 ---
 
-⭐ **Se este projeto foi útil para você, considere dar uma estrela no repositório!** 
+**Última atualização:** Janeiro 2025
+**Versão:** 1.0.0 

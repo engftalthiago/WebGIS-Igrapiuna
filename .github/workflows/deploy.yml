@@ -2,9 +2,9 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -12,12 +12,33 @@ jobs:
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: |
+        npm install -g serve
+        
+    - name: Test build
+      run: |
+        echo "Testing if files exist..."
+        ls -la
+        ls -la data/igrapiuna/
+        
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/main'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: .
-        publish_branch: gh-pages 
+        publish_branch: gh-pages
+        force_orphan: true
+        
+    - name: Deploy status
+      run: |
+        echo "Deployment completed successfully!"
+        echo "Your WebGIS will be available at: https://engftalthiago.github.io/WebGIS-Igrapiuna/" 
