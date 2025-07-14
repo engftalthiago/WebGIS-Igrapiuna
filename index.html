@@ -428,10 +428,81 @@
             bottom: 80px;
             right: 20px;
         }
+        .floating-stats-btn {
+            display: block;
+            position: fixed;
+            bottom: 200px;
+            right: 20px;
+            z-index: 2100;
+            background: #e67e22;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            font-size: 1.3rem;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .stats-panel {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            left: unset;
+            background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(10px);
+            padding: 18px 18px 12px 18px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+            z-index: 2202;
+            min-width: 220px;
+            max-width: 320px;
+        }
+        @media (max-width: 768px) {
+            .floating-stats-btn {
+                bottom: 200px;
+                right: 20px;
+            }
+            .stats-panel {
+                top: 70px;
+                right: 10px;
+                left: 10px;
+                min-width: unset;
+                max-width: none;
+            }
+        }
+        .mapbiomas-controls {
+            margin-bottom: 18px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #e67e22;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .mapbiomas-controls label {
+            font-weight: 500;
+            color: #e67e22;
+            margin-bottom: 2px;
+        }
+        .mapbiomas-controls input[type="range"] {
+            width: 100%;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Barra de busca por código do imóvel ou proprietário -->
+    <div id="searchBarContainer" style="position:fixed;top:0;left:0;width:100vw;z-index:2200;background:rgba(255,255,255,0.97);box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:10px 10px 6px 10px;display:flex;gap:8px;align-items:center;">
+        <input id="searchInput" type="text" placeholder="Buscar por código do imóvel ou proprietário..." style="flex:1;max-width:400px;padding:10px 14px;border-radius:8px;border:1px solid #ccc;font-size:1rem;outline:none;" />
+        <button id="searchBtn" style="padding:10px 18px;border-radius:8px;background:#3498db;color:#fff;border:none;font-size:1.1rem;cursor:pointer;">
+            <i class="fas fa-search"></i>
+        </button>
+    </div>
+    <div id="searchResultMsg" style="position:fixed;top:54px;left:0;width:100vw;z-index:2201;text-align:center;font-size:1rem;color:#c0392b;display:none;"></div>
     <!-- Botão flutuante para abrir a sidebar no mobile -->
     <button class="floating-sidebar-btn" id="openSidebarBtn" style="display:none;">
         <i class="fas fa-bars"></i>
@@ -443,6 +514,15 @@
     <button class="floating-info-btn" id="toggleInfoBtn" style="display:none;">
         <i class="fas fa-info-circle"></i>
     </button>
+    <!-- Botão flutuante para painel estatístico -->
+    <button class="floating-stats-btn" id="toggleStatsBtn" style="display:none;">
+        <i class="fas fa-chart-bar"></i>
+    </button>
+    <!-- Painel estatístico -->
+    <div class="stats-panel" id="statsPanelBox" style="display:none;">
+        <h4><i class="fas fa-chart-bar"></i> Estatísticas</h4>
+        <div id="statsContent" style="margin-top:10px;font-size:1.05rem;"></div>
+    </div>
 
     <!-- Loading Screen -->
     <div id="loading" class="loading">
@@ -526,6 +606,30 @@
                     <div class="layer-info">Proteção</div>
                 </div>
             </div>
+            <!-- MapBiomas Controls -->
+            <div class="mapbiomas-controls">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="mapbiomas-layer">
+                    <label for="mapbiomas-layer">MapBiomas Uso/Cobertura</label>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <label for="mapbiomas-year" style="margin:0;">Ano:</label>
+                    <select id="mapbiomas-year" style="flex:1;padding:3px 8px;border-radius:5px;">
+                        <option value="2022">2022</option>
+                        <option value="2021">2021</option>
+                        <option value="2020">2020</option>
+                        <option value="2019">2019</option>
+                        <option value="2018">2018</option>
+                        <option value="2017">2017</option>
+                        <option value="2016">2016</option>
+                        <option value="2015">2015</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <label for="mapbiomas-opacity" style="margin:0;">Opacidade:</label>
+                    <input type="range" id="mapbiomas-opacity" min="0" max="1" step="0.05" value="0.7">
+                </div>
+            </div>
         </div>
     </div>
 
@@ -571,6 +675,10 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- shp-write para exportar shapefile -->
+    <script src="https://unpkg.com/shp-write@latest/shpwrite.js"></script>
+    <!-- jsPDF para exportar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
         // Global variables
@@ -619,7 +727,65 @@
             }, 1000);
         }
 
-        // Load GeoJSON layers
+        // Estatísticas globais
+        let stats = {
+            totalImoveis: 0,
+            areaImoveis: 0,
+            areaVegetacao: 0,
+            areaAPP: 0
+        };
+        // Função para calcular área em hectares
+        function geojsonAreaHa(geojson) {
+            // Usa a fórmula de Shoelace para polígonos simples (aproximação)
+            function polygonArea(coords) {
+                let area = 0;
+                for (let i = 0, l = coords.length - 1; i < l; i++) {
+                    area += coords[i][0] * coords[i + 1][1];
+                    area -= coords[i + 1][0] * coords[i][1];
+                }
+                return Math.abs(area / 2);
+            }
+            function toRad(deg) { return deg * Math.PI / 180; }
+            function ringArea(ring) {
+                // Convert lat/lon to meters using equirectangular projection
+                let area = 0;
+                let R = 6378137;
+                for (let i = 0, l = ring.length - 1; i < l; i++) {
+                    let x1 = toRad(ring[i][0]);
+                    let y1 = toRad(ring[i][1]);
+                    let x2 = toRad(ring[i + 1][0]);
+                    let y2 = toRad(ring[i + 1][1]);
+                    area += (x2 - x1) * (2 + Math.sin(y1) + Math.sin(y2));
+                }
+                area = area * R * R / 2.0;
+                return Math.abs(area) / 10000; // m² para ha
+            }
+            let total = 0;
+            if (geojson.type === 'FeatureCollection') {
+                geojson.features.forEach(f => { total += geojsonAreaHa(f); });
+            } else if (geojson.type === 'Feature') {
+                total += geojsonAreaHa(geojson.geometry);
+            } else if (geojson.type === 'Polygon') {
+                geojson.coordinates.forEach(ring => { total += ringArea(ring); });
+            } else if (geojson.type === 'MultiPolygon') {
+                geojson.coordinates.forEach(poly => {
+                    poly.forEach(ring => { total += ringArea(ring); });
+                });
+            }
+            return total;
+        }
+        // Atualizar painel estatístico
+        function updateStatsPanel() {
+            const percentAPP = stats.areaImoveis > 0 ? ((stats.areaAPP / stats.areaImoveis) * 100).toFixed(1) : '0.0';
+            document.getElementById('statsContent').innerHTML = `
+                <b>Total de imóveis:</b> ${stats.totalImoveis}<br>
+                <b>Área total cadastrada:</b> ${stats.areaImoveis.toLocaleString('pt-BR', {maximumFractionDigits:2})} ha<br>
+                <b>Área de vegetação nativa:</b> ${stats.areaVegetacao.toLocaleString('pt-BR', {maximumFractionDigits:2})} ha<br>
+                <b>Área de APP:</b> ${stats.areaAPP.toLocaleString('pt-BR', {maximumFractionDigits:2})} ha<br>
+                <b>% APP sobre total:</b> ${percentAPP}%
+            `;
+        }
+        // Calcular estatísticas ao carregar camadas
         async function loadLayers() {
             const layerConfigs = [
                 {
@@ -659,7 +825,8 @@
                     name: 'APP'
                 }
             ];
-
+            // Reset stats
+            stats = { totalImoveis: 0, areaImoveis: 0, areaVegetacao: 0, areaAPP: 0 };
             for (const config of layerConfigs) {
                 try {
                     const response = await fetch(config.file);
@@ -681,6 +848,17 @@
                     const checkbox = document.getElementById(config.id);
                     if (checkbox && checkbox.checked) {
                         layer.addTo(map);
+                    }
+                    // Estatísticas
+                    if (config.id === 'area-imovel') {
+                        stats.totalImoveis = geojson.features.length;
+                        stats.areaImoveis = geojsonAreaHa(geojson);
+                    }
+                    if (config.id === 'vegetacao-nativa') {
+                        stats.areaVegetacao = geojsonAreaHa(geojson);
+                    }
+                    if (config.id === 'app') {
+                        stats.areaAPP = geojsonAreaHa(geojson);
                     }
                 } catch (error) {
                     console.error(`Error loading ${config.file}:`, error);
@@ -706,6 +884,7 @@
                     });
                 }
             }
+            updateStatsPanel();
         }
 
         // Create popup content
@@ -713,26 +892,28 @@
             const properties = feature.properties || {};
             let content = `<div class="custom-popup">`;
             content += `<h3>${layerName}</h3>`;
-
             if (Object.keys(properties).length > 0) {
                 content += `<table class="popup-table">`;
                 content += `<tr><th>Atributo</th><th>Valor</th></tr>`;
-
                 for (const [key, value] of Object.entries(properties)) {
                     content += `<tr><td><strong>${key}</strong></td><td>${value || 'N/A'}</td></tr>`;
                 }
-
                 content += `</table>`;
             } else {
                 content += `<p>Nenhum atributo disponível</p>`;
             }
-
             // Add geometry info
             if (feature.geometry) {
-                content += `<hr style="margin: 10px 0;">`;
+                content += `<hr style=\"margin: 10px 0;\">`;
                 content += `<p><strong>Tipo de Geometria:</strong> ${feature.geometry.type}</p>`;
             }
-
+            // Botões de exportação (apenas para área do imóvel)
+            if (layerName === 'Área do Imóvel') {
+                content += `<div style='margin-top:12px;display:flex;gap:8px;'>`;
+                content += `<button onclick='exportShapefileFromPopup(this)' style="padding:7px 12px;border-radius:6px;background:#27ae60;color:#fff;border:none;cursor:pointer;font-size:0.95rem;">Exportar Shapefile</button>`;
+                content += `<button onclick='exportPDFfromPopup(this)' style="padding:7px 12px;border-radius:6px;background:#2980b9;color:#fff;border:none;cursor:pointer;font-size:0.95rem;">Exportar PDF</button>`;
+                content += `</div>`;
+            }
             content += `</div>`;
             return content;
         }
@@ -916,6 +1097,194 @@
                 info.style.display = 'none';
             }
         };
+        // Botão flutuante para mostrar/ocultar painel estatístico
+        document.getElementById('toggleStatsBtn').onclick = function() {
+            const statsPanel = document.getElementById('statsPanelBox');
+            if (statsPanel.style.display === 'none') {
+                statsPanel.style.display = 'block';
+            } else {
+                statsPanel.style.display = 'none';
+            }
+        };
+        // Exibir botão flutuante do painel estatístico no mobile/desktop
+        function handleStatsButton() {
+            const statsBtn = document.getElementById('toggleStatsBtn');
+            statsBtn.style.display = 'block';
+        }
+        window.addEventListener('DOMContentLoaded', handleStatsButton);
+
+        // --- BUSCA POR IMÓVEL/PROPRIETÁRIO ---
+        function highlightFeature(layer) {
+            if (!layer) return;
+            layer.setStyle({
+                color: '#e74c3c',
+                weight: 4,
+                fillOpacity: 0.6
+            });
+            if (layer.bringToFront) layer.bringToFront();
+            setTimeout(() => {
+                layer.setStyle({
+                    color: '#8B4513',
+                    weight: 1,
+                    fillOpacity: 0.3
+                });
+            }, 4000);
+        }
+        function searchImovel(query) {
+            query = query.trim().toLowerCase();
+            let found = false;
+            let foundLayer = null;
+            let foundFeature = null;
+            // Procurar na camada de área do imóvel
+            const areaImovelLayer = layers['area-imovel'];
+            if (areaImovelLayer) {
+                areaImovelLayer.eachLayer(function(layer) {
+                    const props = layer.feature && layer.feature.properties ? layer.feature.properties : {};
+                    const cod = (props.codigo || props.cod || props.CODIGO || props.COD || '').toString().toLowerCase();
+                    const prop = (props.proprietario || props.nome || props.PROPRIETARIO || props.NOME || '').toString().toLowerCase();
+                    if (cod.includes(query) || prop.includes(query)) {
+                        found = true;
+                        foundLayer = layer;
+                        foundFeature = props;
+                    }
+                });
+            }
+            if (found && foundLayer) {
+                map.fitBounds(foundLayer.getBounds(), {maxZoom: 16, padding: [30,30]});
+                highlightFeature(foundLayer);
+                showSearchMsg('Imóvel encontrado: ' + (foundFeature.codigo || foundFeature.cod || foundFeature.CODIGO || foundFeature.COD || '') + (foundFeature.proprietario ? ' - ' + foundFeature.proprietario : ''), true);
+            } else {
+                showSearchMsg('Nenhum imóvel ou proprietário encontrado.', false);
+            }
+        }
+        function showSearchMsg(msg, success) {
+            const el = document.getElementById('searchResultMsg');
+            el.innerText = msg;
+            el.style.display = 'block';
+            el.style.color = success ? '#27ae60' : '#c0392b';
+            setTimeout(() => { el.style.display = 'none'; }, 4000);
+        }
+        document.getElementById('searchBtn').onclick = function() {
+            const val = document.getElementById('searchInput').value;
+            if (val.length > 0) searchImovel(val);
+        };
+        document.getElementById('searchInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                searchImovel(this.value);
+            }
+        });
+        // Ajustar posição do mapa para não ficar atrás da barra de busca
+        function adjustMapTopPadding() {
+            const bar = document.getElementById('searchBarContainer');
+            if (bar) {
+                document.getElementById('map').style.marginTop = bar.offsetHeight + 'px';
+            }
+        }
+        window.addEventListener('resize', adjustMapTopPadding);
+        window.addEventListener('DOMContentLoaded', adjustMapTopPadding);
+
+        // Função para exportar shapefile do imóvel
+        function exportShapefileFromPopup(btn) {
+            // Encontrar o feature correspondente
+            const popup = btn.closest('.custom-popup');
+            const table = popup.querySelector('.popup-table');
+            if (!table) return;
+            const rows = table.querySelectorAll('tr');
+            let props = {};
+            for (let i = 1; i < rows.length; i++) {
+                const key = rows[i].children[0].innerText;
+                const val = rows[i].children[1].innerText;
+                props[key] = val;
+            }
+            // Recuperar a feature do layer
+            let foundFeature = null;
+            const areaImovelLayer = layers['area-imovel'];
+            if (areaImovelLayer) {
+                areaImovelLayer.eachLayer(function(layer) {
+                    const f = layer.feature;
+                    if (!f) return;
+                    let match = true;
+                    for (const k in props) {
+                        if ((f.properties[k] || f.properties[k.toUpperCase()] || f.properties[k.toLowerCase()] || '') != props[k]) {
+                            match = false;
+                        }
+                    }
+                    if (match) foundFeature = f;
+                });
+            }
+            if (foundFeature) {
+                window.shpwrite.download({type: 'FeatureCollection', features: [foundFeature] }, {file: 'imovel'});
+            } else {
+                alert('Não foi possível exportar o shapefile deste imóvel.');
+            }
+        }
+        // Função para exportar PDF do imóvel
+        function exportPDFfromPopup(btn) {
+            const popup = btn.closest('.custom-popup');
+            const table = popup.querySelector('.popup-table');
+            if (!table) return;
+            const rows = table.querySelectorAll('tr');
+            let props = {};
+            for (let i = 1; i < rows.length; i++) {
+                const key = rows[i].children[0].innerText;
+                const val = rows[i].children[1].innerText;
+                props[key] = val;
+            }
+            // Gerar PDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(16);
+            doc.text('Relatório do Imóvel', 14, 18);
+            doc.setFontSize(12);
+            let y = 30;
+            for (const k in props) {
+                doc.text(`${k}: ${props[k]}`, 14, y);
+                y += 8;
+            }
+            doc.save('relatorio_imovel.pdf');
+        }
+
+        // --- MAPBIOMAS LAYER ---
+        let mapbiomasLayer = null;
+        function getMapbiomasTileUrl(year) {
+            return `https://storage.googleapis.com/mapbiomas-public/collection-8/tiles/brasil/coverage/${year}/{z}/{x}/{y}.png`;
+        }
+        function addMapbiomasLayer(year, opacity) {
+            removeMapbiomasLayer();
+            mapbiomasLayer = L.tileLayer(getMapbiomasTileUrl(year), {
+                opacity: opacity,
+                attribution: 'MapBiomas Coleção 8'
+            });
+            mapbiomasLayer.addTo(map);
+        }
+        function removeMapbiomasLayer() {
+            if (mapbiomasLayer) {
+                map.removeLayer(mapbiomasLayer);
+                mapbiomasLayer = null;
+            }
+        }
+        // Eventos dos controles MapBiomas
+        document.getElementById('mapbiomas-layer').addEventListener('change', function() {
+            if (this.checked) {
+                const year = document.getElementById('mapbiomas-year').value;
+                const opacity = parseFloat(document.getElementById('mapbiomas-opacity').value);
+                addMapbiomasLayer(year, opacity);
+            } else {
+                removeMapbiomasLayer();
+            }
+        });
+        document.getElementById('mapbiomas-year').addEventListener('change', function() {
+            if (document.getElementById('mapbiomas-layer').checked) {
+                const year = this.value;
+                const opacity = parseFloat(document.getElementById('mapbiomas-opacity').value);
+                addMapbiomasLayer(year, opacity);
+            }
+        });
+        document.getElementById('mapbiomas-opacity').addEventListener('input', function() {
+            if (document.getElementById('mapbiomas-layer').checked && mapbiomasLayer) {
+                mapbiomasLayer.setOpacity(parseFloat(this.value));
+            }
+        });
     </script>
 </body>
 
