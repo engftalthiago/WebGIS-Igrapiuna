@@ -22,12 +22,13 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f5f5;
-            overflow: hidden;
+            overflow: auto;
         }
 
         #map {
-            width: 100%;
+            width: 100vw;
             height: 100vh;
+            min-height: 400px;
             z-index: 1;
         }
 
@@ -310,30 +311,53 @@
         /* Responsive Design */
         @media (max-width: 768px) {
             .sidebar {
-                width: 100%;
+                width: 90vw;
+                max-width: 400px;
+                left: 0;
+                top: 0;
+                height: 100vh;
                 transform: translateX(-100%);
+                transition: transform 0.3s ease;
             }
-
+            .sidebar.open {
+                transform: translateX(0);
+                z-index: 2001;
+            }
             .sidebar.collapsed {
                 transform: translateX(-100%);
             }
-
-            .sidebar.expanded {
-                transform: translateX(0);
+            .floating-sidebar-btn {
+                display: block;
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                z-index: 2100;
+                background: #3498db;
+                color: #fff;
+                border: none;
+                border-radius: 50%;
+                width: 48px;
+                height: 48px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                font-size: 1.5rem;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
             }
-
             .info-panel {
                 bottom: 10px;
                 right: 10px;
                 left: 10px;
                 max-width: none;
+                z-index: 1002;
             }
-
             .legend {
-                top: 10px;
+                top: unset;
+                bottom: 80px;
                 right: 10px;
                 left: 10px;
                 max-width: none;
+                z-index: 1002;
             }
         }
 
@@ -374,6 +398,11 @@
 </head>
 
 <body>
+    <!-- Botão flutuante para abrir a sidebar no mobile -->
+    <button class="floating-sidebar-btn" id="openSidebarBtn" style="display:none;">
+        <i class="fas fa-bars"></i>
+    </button>
+
     <!-- Loading Screen -->
     <div id="loading" class="loading">
         <div class="spinner"></div>
@@ -452,12 +481,6 @@
                     <label for="app">APP</label>
                     <div class="layer-info">Proteção</div>
                 </div>
-
-                <div class="layer-item">
-                    <input type="checkbox" id="hidrografia">
-                    <label for="hidrografia">Hidrografia</label>
-                    <div class="layer-info">Rios</div>
-                </div>
             </div>
         </div>
     </div>
@@ -499,10 +522,6 @@
         <div class="legend-item">
             <div class="legend-color" style="background: #4169E1;"></div>
             <span>APP</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background: #00BFFF;"></div>
-            <span>Hidrografia</span>
         </div>
     </div>
 
@@ -594,12 +613,6 @@
                     file: 'data/igrapiuna/APP.geojson',
                     style: { color: '#4169E1', weight: 1, fillColor: '#4169E1', fillOpacity: 0.4 },
                     name: 'APP'
-                },
-                {
-                    id: 'hidrografia',
-                    file: 'data/igrapiuna/HIDROGRAFIA.geojson',
-                    style: { color: '#00BFFF', weight: 2, fillColor: '#00BFFF', fillOpacity: 0.6 },
-                    name: 'Hidrografia'
                 }
             ];
 
@@ -701,12 +714,16 @@
             const sidebar = document.getElementById('sidebar');
             const icon = document.getElementById('toggle-icon');
 
-            sidebar.classList.toggle('collapsed');
-
-            if (sidebar.classList.contains('collapsed')) {
-                icon.className = 'fas fa-chevron-right';
+            // Para mobile, alterna classe 'open'
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('open');
             } else {
-                icon.className = 'fas fa-chevron-left';
+                sidebar.classList.toggle('collapsed');
+                if (sidebar.classList.contains('collapsed')) {
+                    icon.className = 'fas fa-chevron-right';
+                } else {
+                    icon.className = 'fas fa-chevron-left';
+                }
             }
         }
 
@@ -788,6 +805,36 @@
 
         // Initialize map when page loads
         window.addEventListener('load', initMap);
+
+        // Exibir botão flutuante no mobile
+        function handleSidebarButton() {
+            const btn = document.getElementById('openSidebarBtn');
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 768) {
+                btn.style.display = 'block';
+                sidebar.classList.add('collapsed');
+                sidebar.classList.remove('open');
+            } else {
+                btn.style.display = 'none';
+                sidebar.classList.remove('open');
+                sidebar.classList.remove('collapsed');
+            }
+        }
+        window.addEventListener('resize', handleSidebarButton);
+        window.addEventListener('DOMContentLoaded', handleSidebarButton);
+        document.getElementById('openSidebarBtn').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.add('open');
+        });
+        // Fechar sidebar ao clicar fora no mobile
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const btn = document.getElementById('openSidebarBtn');
+            if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
+                if (!sidebar.contains(e.target) && e.target !== btn) {
+                    sidebar.classList.remove('open');
+                }
+            }
+        });
     </script>
 </body>
 
