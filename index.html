@@ -34,58 +34,59 @@
 
         /* Sidebar */
         .sidebar {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 350px;
             height: 100vh;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(10px);
-            z-index: 1000;
+            z-index: 2001;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease;
             overflow-y: auto;
+            max-width: 95vw;
         }
-
         .sidebar.collapsed {
-            transform: translateX(-320px);
+            transform: translateX(-100%);
         }
-
+        .sidebar.open {
+            transform: translateX(0);
+        }
         .sidebar-header {
             background: linear-gradient(135deg, #2c3e50, #3498db);
             color: white;
-            padding: 20px;
+            padding: 20px 20px 20px 60px;
             text-align: center;
             position: relative;
         }
-
         .sidebar-header h1 {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             margin-bottom: 5px;
         }
-
         .sidebar-header p {
             font-size: 0.9rem;
             opacity: 0.9;
         }
-
-        .toggle-btn {
+        .toggle-btn, .close-sidebar-btn {
             position: absolute;
             top: 20px;
-            right: 20px;
+            left: 20px;
             background: rgba(255, 255, 255, 0.2);
             border: none;
             color: white;
-            padding: 8px;
-            border-radius: 5px;
+            padding: 12px;
+            border-radius: 50%;
             cursor: pointer;
-            transition: background 0.3s;
+            font-size: 1.5rem;
+            z-index: 2102;
         }
-
-        .toggle-btn:hover {
+        .toggle-btn:hover, .close-sidebar-btn:hover {
             background: rgba(255, 255, 255, 0.3);
         }
-
+        .close-sidebar-btn {
+            display: none;
+        }
         .sidebar-content {
             padding: 20px;
         }
@@ -254,9 +255,10 @@
 
         /* Popup Styles */
         .custom-popup {
-            max-width: 400px;
-            max-height: 300px;
+            max-width: 95vw;
+            max-height: 60vh;
             overflow-y: auto;
+            font-size: 1.1rem;
         }
 
         .custom-popup h3 {
@@ -311,8 +313,8 @@
         /* Responsive Design */
         @media (max-width: 768px) {
             .sidebar {
-                width: 90vw;
-                max-width: 400px;
+                width: 95vw;
+                max-width: 95vw;
                 left: 0;
                 top: 0;
                 height: 100vh;
@@ -339,25 +341,32 @@
                 width: 48px;
                 height: 48px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-                font-size: 1.5rem;
+                font-size: 2rem;
                 align-items: center;
                 justify-content: center;
                 cursor: pointer;
             }
-            .info-panel {
-                bottom: 10px;
-                right: 10px;
+            .layer-item, .basemap-option {
+                font-size: 1.1rem;
+                padding: 16px;
+            }
+            .layer-item input[type="checkbox"], .basemap-option input[type="radio"] {
+                width: 28px;
+                height: 28px;
+                margin-right: 16px;
+            }
+            .legend, .info-panel {
                 left: 10px;
+                right: 10px;
                 max-width: none;
                 z-index: 1002;
             }
             .legend {
                 top: unset;
                 bottom: 80px;
-                right: 10px;
-                left: 10px;
-                max-width: none;
-                z-index: 1002;
+            }
+            .info-panel {
+                bottom: 10px;
             }
         }
 
@@ -394,6 +403,31 @@
                 transform: rotate(360deg);
             }
         }
+        /* Botões flutuantes para legenda e painel */
+        .floating-legend-btn, .floating-info-btn {
+            display: block;
+            position: fixed;
+            z-index: 2100;
+            background: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            font-size: 1.3rem;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .floating-legend-btn {
+            bottom: 140px;
+            right: 20px;
+        }
+        .floating-info-btn {
+            bottom: 80px;
+            right: 20px;
+        }
     </style>
 </head>
 
@@ -401,6 +435,13 @@
     <!-- Botão flutuante para abrir a sidebar no mobile -->
     <button class="floating-sidebar-btn" id="openSidebarBtn" style="display:none;">
         <i class="fas fa-bars"></i>
+    </button>
+    <!-- Botões flutuantes para legenda e painel -->
+    <button class="floating-legend-btn" id="toggleLegendBtn" style="display:none;">
+        <i class="fas fa-palette"></i>
+    </button>
+    <button class="floating-info-btn" id="toggleInfoBtn" style="display:none;">
+        <i class="fas fa-info-circle"></i>
     </button>
 
     <!-- Loading Screen -->
@@ -415,6 +456,9 @@
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
+            <button class="close-sidebar-btn" id="closeSidebarBtn" style="display:none;">
+                <i class="fas fa-times"></i>
+            </button>
             <h1><i class="fas fa-map-marked-alt"></i> WebGIS Igrapiuna</h1>
             <p>Sistema de Informação Geográfica</p>
             <button class="toggle-btn" onclick="toggleSidebar()">
@@ -486,7 +530,7 @@
     </div>
 
     <!-- Info Panel -->
-    <div class="info-panel">
+    <div class="info-panel" id="infoPanelBox">
         <h4><i class="fas fa-info-circle"></i> Informações</h4>
         <div class="coordinates" id="coordinates">
             Lat: 0.0000, Lon: 0.0000
@@ -497,7 +541,7 @@
     </div>
 
     <!-- Legend -->
-    <div class="legend">
+    <div class="legend" id="legendBox">
         <h4><i class="fas fa-palette"></i> Legenda</h4>
         <div class="legend-item">
             <div class="legend-color" style="background: transparent; border: 2px solid #666;"></div>
@@ -710,13 +754,17 @@
         }
 
         // Toggle sidebar
-        function toggleSidebar() {
+        function toggleSidebar(forceClose = false) {
             const sidebar = document.getElementById('sidebar');
             const icon = document.getElementById('toggle-icon');
-
-            // Para mobile, alterna classe 'open'
+            const closeBtn = document.getElementById('closeSidebarBtn');
             if (window.innerWidth <= 768) {
-                sidebar.classList.toggle('open');
+                if (forceClose) {
+                    sidebar.classList.remove('open');
+                } else {
+                    sidebar.classList.toggle('open');
+                }
+                closeBtn.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
             } else {
                 sidebar.classList.toggle('collapsed');
                 if (sidebar.classList.contains('collapsed')) {
@@ -724,8 +772,13 @@
                 } else {
                     icon.className = 'fas fa-chevron-left';
                 }
+                closeBtn.style.display = 'none';
             }
         }
+        // Fechar sidebar pelo botão X
+        document.getElementById('closeSidebarBtn').onclick = function() {
+            toggleSidebar(true);
+        };
 
         // Update coordinates display
         function updateCoordinates(e) {
@@ -806,24 +859,33 @@
         // Initialize map when page loads
         window.addEventListener('load', initMap);
 
-        // Exibir botão flutuante no mobile
+        // Exibir botão flutuante no mobile e botões de legenda/painel
         function handleSidebarButton() {
             const btn = document.getElementById('openSidebarBtn');
             const sidebar = document.getElementById('sidebar');
+            const legendBtn = document.getElementById('toggleLegendBtn');
+            const infoBtn = document.getElementById('toggleInfoBtn');
             if (window.innerWidth <= 768) {
                 btn.style.display = 'block';
                 sidebar.classList.add('collapsed');
                 sidebar.classList.remove('open');
+                legendBtn.style.display = 'block';
+                infoBtn.style.display = 'block';
             } else {
                 btn.style.display = 'none';
                 sidebar.classList.remove('open');
                 sidebar.classList.remove('collapsed');
+                legendBtn.style.display = 'none';
+                infoBtn.style.display = 'none';
+                document.getElementById('legendBox').style.display = 'block';
+                document.getElementById('infoPanelBox').style.display = 'block';
             }
         }
         window.addEventListener('resize', handleSidebarButton);
         window.addEventListener('DOMContentLoaded', handleSidebarButton);
         document.getElementById('openSidebarBtn').addEventListener('click', function() {
             document.getElementById('sidebar').classList.add('open');
+            document.getElementById('closeSidebarBtn').style.display = 'block';
         });
         // Fechar sidebar ao clicar fora no mobile
         document.addEventListener('click', function(e) {
@@ -832,9 +894,28 @@
             if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
                 if (!sidebar.contains(e.target) && e.target !== btn) {
                     sidebar.classList.remove('open');
+                    document.getElementById('closeSidebarBtn').style.display = 'none';
                 }
             }
         });
+        // Botão flutuante para mostrar/ocultar legenda
+        document.getElementById('toggleLegendBtn').onclick = function() {
+            const legend = document.getElementById('legendBox');
+            if (legend.style.display === 'none') {
+                legend.style.display = 'block';
+            } else {
+                legend.style.display = 'none';
+            }
+        };
+        // Botão flutuante para mostrar/ocultar painel de info
+        document.getElementById('toggleInfoBtn').onclick = function() {
+            const info = document.getElementById('infoPanelBox');
+            if (info.style.display === 'none') {
+                info.style.display = 'block';
+            } else {
+                info.style.display = 'none';
+            }
+        };
     </script>
 </body>
 
